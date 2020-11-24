@@ -18,7 +18,7 @@ describe('listGroupMergeRequests', () => {
 
         const gitlabRestClient = new MockedRestClient();
         gitlabRestClient.addMockedResponse(response);
-        setConfig({ gitlabRestClient });
+        setConfig({ gitlabRestClient, groupId });
 
         const result = await listGroupMergeRequests(groupId, {});
 
@@ -37,7 +37,7 @@ describe('listGroupMergeRequests', () => {
 
         const gitlabRestClient = new MockedRestClient();
         gitlabRestClient.addMockedResponse(response);
-        setConfig({ gitlabRestClient });
+        setConfig({ gitlabRestClient, groupId });
 
         const result = await listGroupMergeRequests(groupId, { since });
 
@@ -68,7 +68,7 @@ describe('listGroupMergeRequests', () => {
         gitlabRestClient.addMockedResponse(response1);
         gitlabRestClient.addMockedResponse(response2);
         gitlabRestClient.addMockedResponse(response3);
-        setConfig({ gitlabRestClient });
+        setConfig({ gitlabRestClient, groupId });
 
         const result = await listGroupMergeRequests(groupId, {});
 

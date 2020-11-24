@@ -24,7 +24,7 @@
     "build": "tsc -p tsconfig.release.json",
     "build:watch": "tsc -w -p tsconfig.release.json",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "jest --coverage",
+    "test": "jest --coverage && rimraf coverage",
     "test:watch": "jest --watch"
   },
   "author": "Sela Marjan <sela.marjan@gmail.com>",

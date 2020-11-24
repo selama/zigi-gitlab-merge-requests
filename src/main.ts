@@ -12,7 +12,10 @@ const gitlabRestClient = new RestClient(
   }
 );
 
-setConfig({ gitlabRestClient });
+setConfig({ 
+  gitlabRestClient,
+  groupId: process.env.GITLAB_GROUP_ID
+});
 
 const app = express();
 const port = process.env.SERVICE_PORT || 5000;
