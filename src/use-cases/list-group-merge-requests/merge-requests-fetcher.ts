@@ -1,10 +1,11 @@
 import { config } from '../../config';
+import { MergeRequest } from '../../types';
 
 const MAX_PER_PAGE = 100;
 const OPEN_MERGE_REQUEST_STATE = 'opened';
 const TOTAL_PAGES_COUNT_HEADER_KEY = 'x-total-pages';
 
-const mrPagesArrToMrArr = (mrArr: any[], mrPage: any[]) => [...mrArr, ...mrPage];
+const mrPagesArrToMrArr = (mrArr: MergeRequest[], mrPage: MergeRequest[]) => [...mrArr, ...mrPage];
 
 const range = (inclusiveStart: number, inclusiveEnd: number) => {
     const rangeArr: number[] = [];
@@ -25,7 +26,7 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
 }
 
 const fetchSingleMergeRequestsPage = async (groupId: string, query: Record<string, string | number>) => {
-    return config.restClient.get<any[]>(`groups/${groupId}/merge_requests`, {...query});
+    return config.restClient.get<MergeRequest[]>(`groups/${groupId}/merge_requests`, {...query});
 }
 
 const fetchRestOfMergeRequestsPages = async (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {

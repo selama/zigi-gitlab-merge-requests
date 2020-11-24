@@ -1,8 +1,9 @@
 import { MockedResponseFactory, MockedResultFactory } from '../../../../__tests__/mocks/gitlab-rest-client';
+import { MergeRequest } from '../../../types';
 
 type MockOpenedMergeRequestsResponseInput = {
     groupId: string,
-    mergeRequests: any[],
+    mergeRequests: MergeRequest[],
     totalPagesCount?: number,
     page?: number
 }
@@ -28,7 +29,7 @@ export const mockOpenedMergeRequestsResponse = ({
 
 export const mockMergeRequestsUpdatedSinceResponse = (
     groupId: string,
-    mergeRequests: any[],
+    mergeRequests: MergeRequest[],
     since: string,
     totalPagesCount: number = 1
     ) => {
