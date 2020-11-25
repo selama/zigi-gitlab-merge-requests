@@ -1,11 +1,13 @@
 import { config } from '../../config';
-import { MergeRequest } from '../../types';
+import { IRestClientResult } from '../../config/rest-client-interfaces';
+import { ExtendedMergeRequest, MergeRequest } from '../../types';
+// import { fetchMergeRequestNotes } from './merge-requests-notes-fetcher';
 
 const MAX_PER_PAGE = 100;
 const OPEN_MERGE_REQUEST_STATE = 'opened';
 const TOTAL_PAGES_COUNT_HEADER_KEY = 'x-total-pages';
 
-const mrPagesArrToMrArr = (mrArr: MergeRequest[], mrPage: MergeRequest[]) => [...mrArr, ...mrPage];
+const mergeRequestsPagesToMergeRequestsArr = (mrArr: ExtendedMergeRequest[], mrPage: ExtendedMergeRequest[]) => [...mrArr, ...mrPage];
 
 const range = (inclusiveStart: number, inclusiveEnd: number) => {
     const rangeArr: number[] = [];
@@ -25,31 +27,43 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
     return {per_page: MAX_PER_PAGE, ...useCaseQuery};
 }
 
-const fetchSingleMergeRequestsPage = async (groupId: string, query: Record<string, string | number>) => {
+const fetchExtendedMergeRequestData = async (mergeRequest: MergeRequest): Promise<ExtendedMergeRequest> => {
+    return {
+        ...mergeRequest,
+        notes: [] //await fetchMergeRequestNotes(mergeRequest)
+    };
+}
+
+const fetchSingleExtendedPage = async (pageResultPromise: Promise<IRestClientResult<MergeRequest[]>>) => {
+    const page = await pageResultPromise;
+    const mergeRequests = page.getData();
+    return Promise.all(mergeRequests.map(fetchExtendedMergeRequestData));
+}
+
+const fetchSinglePage = async (groupId: string, query: Record<string, string | number>) => {
     return config.restClient.get<MergeRequest[]>(`groups/${groupId}/merge_requests`, {...query});
 }
 
-const fetchRestOfMergeRequestsPages = async (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {
-    const nextPageToFetch = 2; // gitlab's paging count starts at 1
-    const lastPageToFetch = totalPagesCount; // gitlab's paging count starts at 1
-    const pageNumbers = range(nextPageToFetch, lastPageToFetch);
-    const pagePromises = pageNumbers.map(n => fetchSingleMergeRequestsPage(groupId, {...query, page: n}))
-    return Promise.all(pagePromises);
+const fetchRestOfPages = (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {
+    const pageNumbers = range(2, totalPagesCount); // gitlab's paging count starts at 1
+    const pagePromises = pageNumbers.map(n => fetchSinglePage(groupId, {...query, page: n}));
+    return pagePromises;
 }
 
-const fetchAllPagesResults = async (groupId: string, query: Record<string, string>) => {
-    const mergeRequestsQuery = getMergeRequestsQuery(query);
-    const firstPageResult = await fetchSingleMergeRequestsPage(groupId, mergeRequestsQuery);
+const fetchAllPages = async (groupId: string, query: Record<string, string | number>) => {
+    const firstPagePromise = fetchSinglePage(groupId, query);
+    const firstPage = await firstPagePromise;
 
-    const totalPagesCount = Number(firstPageResult.getHeaders()[TOTAL_PAGES_COUNT_HEADER_KEY]);
-    const restOfPagesResult = await fetchRestOfMergeRequestsPages(groupId, mergeRequestsQuery, totalPagesCount);
+    const totalPagesCount = Number(firstPage.getHeaders()[TOTAL_PAGES_COUNT_HEADER_KEY]);
+    const restOfPagesPromises = fetchRestOfPages(groupId, query, totalPagesCount);
 
-    return [firstPageResult, ...restOfPagesResult];
+    const allPagesPromises = [firstPagePromise, ...restOfPagesPromises];
+
+    return Promise.all(allPagesPromises.map(fetchSingleExtendedPage));
 }
 
 export const fetchMergeRequests = async (groupId: string, query: Record<string, string>) => {
-    const allPagesResults = await fetchAllPagesResults(groupId, query);
-    return allPagesResults
-        .map(pageResult => pageResult.getData())
-        .reduce(mrPagesArrToMrArr, []);
+    const mergeRequestsQuery = getMergeRequestsQuery(query);
+    const mergeRequestsPages = await fetchAllPages(groupId, mergeRequestsQuery);
+    return mergeRequestsPages.reduce(mergeRequestsPagesToMergeRequestsArr, []);
 }

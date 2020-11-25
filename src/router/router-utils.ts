@@ -4,12 +4,12 @@ import { query as queryValidator } from 'express-validator';
 import { isValidISODateString } from 'iso-datestring-validator';
 
 export const wrapWithErrorCatcher = (handler: RequestHandler) =>
-    (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         try {
             if (!validationResult(req).isEmpty()) {
                 throw new Error(JSON.stringify(validationResult(req).mapped()))
             }
-            handler(req, res, next);
+            await handler(req, res, next);
         } catch (error) {
             next(error)
         }

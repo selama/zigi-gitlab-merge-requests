@@ -10,3 +10,11 @@ export type MergeRequest = {
     updated_at: string;
     state: MergeRequestState;
 };
+
+export type Note = {
+    body: string;
+}
+
+export type ExtendedMergeRequest = MergeRequest & {
+    notes: Note[];
+};
