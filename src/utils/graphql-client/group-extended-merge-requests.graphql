@@ -1,0 +1,17 @@
+query groupExtendedMergeRequests($mergeRequestsIids: [String!]!) {
+  group(fullPath: "gitlab-org") {
+    mergeRequests(iids: $mergeRequestsIids) {
+      nodes {
+        iid,
+        notes {
+          nodes {
+            body,
+            author {
+              username
+            }  
+          }
+        }
+      }
+    }
+  }
+}

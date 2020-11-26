@@ -1,7 +1,7 @@
 import { config } from '../../config';
 import { IRestClientResult } from '../../config/rest-client-interfaces';
 import { ExtendedMergeRequest, MergeRequest } from '../../types';
-// import { fetchMergeRequestNotes } from './merge-requests-notes-fetcher';
+import { fetchPageExtendedData } from './merge-requests-extended-data-fetcher';
 
 const MAX_PER_PAGE = 100;
 const OPEN_MERGE_REQUEST_STATE = 'opened';
@@ -27,17 +27,11 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
     return {per_page: MAX_PER_PAGE, ...useCaseQuery};
 }
 
-const fetchExtendedMergeRequestData = async (mergeRequest: MergeRequest): Promise<ExtendedMergeRequest> => {
-    return {
-        ...mergeRequest,
-        notes: [] //await fetchMergeRequestNotes(mergeRequest)
-    };
-}
-
 const fetchSingleExtendedPage = async (pageResultPromise: Promise<IRestClientResult<MergeRequest[]>>) => {
     const page = await pageResultPromise;
     const mergeRequests = page.getData();
-    return Promise.all(mergeRequests.map(fetchExtendedMergeRequestData));
+    const mergeRequestsIids = mergeRequests.map(({iid}) => String(iid));
+    return fetchPageExtendedData(mergeRequestsIids);
 }
 
 const fetchSinglePage = async (groupId: string, query: Record<string, string | number>) => {

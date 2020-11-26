@@ -1,8 +1,8 @@
 import express from "express";
 import { setConfig } from './config';
-import { createRouter } from './router';
-import { errorHandler } from './middlewares/express-error-handler';
-import { RestClient } from './middlewares/axios-rest-client';
+import { createRouter } from './express/router';
+import { errorHandler } from './express/middlewares/express-error-handler';
+import { RestClient } from './utils/axios-rest-client';
 
 const gitlabRestClient = new RestClient(
   process.env.GITLAB_BASE_URL,
