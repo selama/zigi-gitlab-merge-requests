@@ -3,22 +3,39 @@ import { setConfig } from './config';
 import { createRouter } from './express/router';
 import { errorHandler } from './express/middlewares/express-error-handler';
 import { RestClient } from './utils/axios-rest-client';
+import { GitlabGraphqlClient } from './utils/graphql-client/graphql-sdk-client';
+
+const { 
+  SERVICE_PORT, 
+  GITLAB_API_KEY, 
+  GITLAB_REST_URL, 
+  GITLAB_GRAPHQL_URL, 
+  GITLAB_GROUP_ID 
+} = process.env;
 
 const gitlabRestClient = new RestClient(
-  process.env.GITLAB_BASE_URL,
+  GITLAB_REST_URL,
   {
-    "PRIVATE-TOKEN": process.env.GITLAB_API_KEY,
+    "PRIVATE-TOKEN": GITLAB_API_KEY,
     'Content-Type': 'application/json'
   }
 );
 
+const gitlabGraphqlClient = new GitlabGraphqlClient(
+  GITLAB_GRAPHQL_URL,
+  {
+    "PRIVATE-TOKEN": GITLAB_API_KEY,
+  }
+)
+
 setConfig({ 
   gitlabRestClient,
-  groupId: process.env.GITLAB_GROUP_ID
+  gitlabGraphqlClient,
+  groupId: GITLAB_GROUP_ID
 });
 
 const app = express();
-const port = process.env.SERVICE_PORT || 5000;
+const port = SERVICE_PORT;
 
 app.use(createRouter());
 

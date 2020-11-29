@@ -1,18 +1,16 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import rateLimit from 'axios-rate-limit';
-import { IRestClient, IRestClientResult } from '../config/rest-client-interfaces';
+import { IRestClient, IRestClientResult } from '../config/config-interfaces/rest-client-interfaces';
 
 export class RestClient implements IRestClient {
 
     private clientInstance: AxiosInstance;
 
     constructor(baseURL: string, headers: Record<string, string>) {
-        this.clientInstance =
-            rateLimit(axios.create({
+        this.clientInstance = axios.create({
                 baseURL,
                 headers
-            }), { maxRequests: 20, perMilliseconds: 4000 })
+            });
     }
 
     async get<T>(resource: string, query?: Record<string, string | number>) {

@@ -1,14 +1,126 @@
 import { GraphQLClient } from 'graphql-request'
-import { getSdk } from '../../generated/graphql/graphql-sdk';
-// import axios from 'axios';
-const client = new GraphQLClient('https://gitlab.com/api/graphql', {
-    // fetch: axios,
-    headers: {
-        'PRIVATE-TOKEN': 'CTCvMLvoqeB8hAHCVGvt'
+import { Exact, ExtendedMergeRequestsPageQueryGQL, getSdk } from '../../../generated/graphql/graphql-sdk';
+import { IGitlabGraphqlClient } from '../../config/config-interfaces/graphql-client-interface';
+
+const promisedTimeout = (timeout: number) =>  new Promise(resolve => setTimeout(resolve, timeout));
+
+const createQueue = <T>() => {
+    const queue: T[] = [];
+    return {
+        add: (item: T) => {
+            queue.push(item);
+        },
+        pop: () => queue.shift(),
+        size: () => queue.length
+    };
+};
+
+const bindActionInvokerToAPromise = (action: () => Promise<unknown>): [() => Promise<void>, Promise<unknown>] => {
+    let resolvePromise: (value?: unknown) => void;
+    let rejectPromise: (reason?: any) => void;
+
+    const promise = new Promise((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
+    });
+
+    const invoker = () => action()
+        .then(result => {
+            resolvePromise(result);
+        })
+        .catch(reason => {
+            rejectPromise(reason);
+        });
+
+    return [invoker, promise];
+}
+
+const createConcurrencyLimitter = (maxConcurrentPendingPromises: number = 5) => {
+    let currentPendingCount = 0;
+    let invokersQueue = createQueue<() => Promise<unknown>>();
+
+    const execute = async () => {
+        if (currentPendingCount === maxConcurrentPendingPromises || invokersQueue.size() === 0) {
+            return;
+        }
+        const invoker = invokersQueue.pop();
+        currentPendingCount++;
+        await invoker()
+        currentPendingCount--;
+        execute();
     }
-})
-const sdk = getSdk(client);
 
-const mergeRequestsIids = ["48490", "48489", "48488", "12", "48487", "1353", "48486", "48485", "48484", "1674", "48483", "48482", "48481", "707", "1", "48478", "48477", "48476", "48475", "2837", "12", "1", "2", "48474", "48473", "48472", "48471", "11", "48470", "48469", "48468", "48467", "48466", "2836", "48465", "130", "48463", "1704", "48462", "48461", "25", "48460", "48459", "48457", "48456", "48455", "48453", "97", "48452", "48451", "48450", "1352", "48449", "48448", "48447", "48446", "48445", "661", "48444", "48443", "48442", "1349", "48441", "48440", "48439", "4785", "1673", "1703", "1702", "48437", "48436", "48435", "48434", "179", "17", "48433", "28", "48431", "48430", "48429", "48428", "48427", "48426", "2180", "48424", "48423", "48422", "4784", "48421", "48419", "48418", "48417", "48416", "2179", "20", "346", "48414", "48413", "1672", "557"];
+    return {
+        add: (action: () => Promise<unknown>) => {
+            const [invoker, promise] = bindActionInvokerToAPromise(action);
+            invokersQueue.add(invoker);
+            execute();
+            return promise;
+        }
+    }
+}
 
-export const testGraphqlSDKClient = () => sdk.groupExtendedMergeRequests({mergeRequestsIids});
+const splitIids = (iids: string[]) => {
+    const part1Ids = iids.slice(0, Math.ceil(iids.length/2));
+    const part2Ids = iids.slice(Math.ceil(iids.length/2));
+    return [part1Ids, part2Ids];
+}
+
+const mergeResults = (part1Result: ExtendedMergeRequestsPageQueryGQL, part2Result: ExtendedMergeRequestsPageQueryGQL) => {
+    return {
+        group: {
+            mergeRequests: {
+                nodes: [
+                    ...part1Result.group.mergeRequests.nodes,
+                    ...part2Result.group.mergeRequests.nodes
+                ]
+            }
+        }
+    };
+};
+
+type RetryFunction = (variables: Exact<{ mergeRequestsIids: string[]; }>, attempt?: number) => 
+    Promise<ExtendedMergeRequestsPageQueryGQL>;
+
+export class GitlabGraphqlClient implements IGitlabGraphqlClient {
+
+    private sdk: ReturnType<typeof getSdk>;
+    private concurrencyLimitter = createConcurrencyLimitter(5);
+
+    constructor(url: string, headers: Record<string, string>) {
+        const client = new GraphQLClient(url, { headers });
+        this.sdk = getSdk(client);
+    }
+
+    // since the gitlab API is very fragile - adding this resiliant retry mechanism.
+    // 1 - it uses a concurrency limiter mechanism - ensure that no more than 5 requests are being 
+    // in pending state(fetching) concurrently.
+    // 2 - the original request is trying to fetch a whole page data (100 merge requests), but if
+    // a request has failed, this retry mechanism, will try 2 requests of 50 merge requests.
+    // a fail for 50 merge requests fetching will lead to 25 merge requests fetcing and so on up to 10 iterations.
+    _retry: RetryFunction = async (variables: Exact<{ mergeRequestsIids: string[]; }>, attempt: number = 0) => {
+        const maxRetries = 10;
+        try {
+            const result = await this.concurrencyLimitter.add(
+                () => promisedTimeout(attempt * 100).then(() => this.sdk.extendedMergeRequestsPage(variables))
+            );
+            return result;
+        } catch (err) {
+            if (attempt < maxRetries) {
+                const [part1Iids, part2Iids] = splitIids(variables.mergeRequestsIids);
+                const [part1Result, part2Result]: ExtendedMergeRequestsPageQueryGQL[] = await Promise.all([
+                    this._retry({ mergeRequestsIids: part1Iids }, attempt + 1),
+                    this._retry({ mergeRequestsIids: part2Iids }, attempt + 1),
+                ]);
+                return mergeResults(part1Result, part2Result);
+            } else {
+                console.log('failed', variables.mergeRequestsIids);
+                throw err;
+            }
+        }
+    }
+
+    getExtendedMergeRequestsPage = (variables: Exact<{ mergeRequestsIids: string[]; }>) => {
+        return this._retry(variables);
+    }
+}

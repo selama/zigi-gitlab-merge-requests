@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from 'util';
-import { IRestClient, IRestClientResult } from "../../src/config/rest-client-interfaces";
+import { IRestClient, IRestClientResult } from "../../src/config/config-interfaces/rest-client-interfaces";
 
 type Result<T> = {data: T; headers: Record<string, string>};
 type Response<T> = {

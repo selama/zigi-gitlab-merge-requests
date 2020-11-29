@@ -1,7 +1,5 @@
-import { ExtendedMergeRequest } from '../../types'
+import { config } from '../../config';
 
-type FetchPageExtendedData = (mergeRequestsIids: string[]) => Promise<ExtendedMergeRequest>
-
-export const fetchPageExtendedData: FetchPageExtendedData = async (mergeRequestsIids: string[]) => {
-
+export const fetchPageExtendedData = async (mergeRequestsIids: string[]) => {
+    return config.gitlabGraphqlClient.getExtendedMergeRequestsPage({mergeRequestsIids});
 }

@@ -1,13 +1,10 @@
 import { config } from '../../config';
-import { IRestClientResult } from '../../config/rest-client-interfaces';
-import { ExtendedMergeRequest, MergeRequest } from '../../types';
+import { IRestClientResult, MergeRequestREST } from '../../config/config-interfaces/rest-client-interfaces';
 import { fetchPageExtendedData } from './merge-requests-extended-data-fetcher';
 
 const MAX_PER_PAGE = 100;
 const OPEN_MERGE_REQUEST_STATE = 'opened';
 const TOTAL_PAGES_COUNT_HEADER_KEY = 'x-total-pages';
-
-const mergeRequestsPagesToMergeRequestsArr = (mrArr: ExtendedMergeRequest[], mrPage: ExtendedMergeRequest[]) => [...mrArr, ...mrPage];
 
 const range = (inclusiveStart: number, inclusiveEnd: number) => {
     const rangeArr: number[] = [];
@@ -27,7 +24,7 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
     return {per_page: MAX_PER_PAGE, ...useCaseQuery};
 }
 
-const fetchSingleExtendedPage = async (pageResultPromise: Promise<IRestClientResult<MergeRequest[]>>) => {
+const fetchSingleExtendedPage = async (pageResultPromise: Promise<IRestClientResult<MergeRequestREST[]>>) => {
     const page = await pageResultPromise;
     const mergeRequests = page.getData();
     const mergeRequestsIids = mergeRequests.map(({iid}) => String(iid));
@@ -35,7 +32,7 @@ const fetchSingleExtendedPage = async (pageResultPromise: Promise<IRestClientRes
 }
 
 const fetchSinglePage = async (groupId: string, query: Record<string, string | number>) => {
-    return config.restClient.get<MergeRequest[]>(`groups/${groupId}/merge_requests`, {...query});
+    return config.gitlabRestClient.get<MergeRequestREST[]>(`groups/${groupId}/merge_requests`, {...query});
 }
 
 const fetchRestOfPages = (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {
@@ -44,20 +41,16 @@ const fetchRestOfPages = (groupId: string, query: Record<string, string | number
     return pagePromises;
 }
 
-const fetchAllPages = async (groupId: string, query: Record<string, string | number>) => {
-    const firstPagePromise = fetchSinglePage(groupId, query);
+export const fetchMergeRequestsPages = async (groupId: string, query: Record<string, string>) => {
+    const mergeRequestsQuery = getMergeRequestsQuery(query);
+
+    const firstPagePromise = fetchSinglePage(groupId, mergeRequestsQuery);
     const firstPage = await firstPagePromise;
 
     const totalPagesCount = Number(firstPage.getHeaders()[TOTAL_PAGES_COUNT_HEADER_KEY]);
-    const restOfPagesPromises = fetchRestOfPages(groupId, query, totalPagesCount);
+    const restOfPagesPromises = fetchRestOfPages(groupId, mergeRequestsQuery, totalPagesCount);
 
     const allPagesPromises = [firstPagePromise, ...restOfPagesPromises];
 
     return Promise.all(allPagesPromises.map(fetchSingleExtendedPage));
-}
-
-export const fetchMergeRequests = async (groupId: string, query: Record<string, string>) => {
-    const mergeRequestsQuery = getMergeRequestsQuery(query);
-    const mergeRequestsPages = await fetchAllPages(groupId, mergeRequestsQuery);
-    return mergeRequestsPages.reduce(mergeRequestsPagesToMergeRequestsArr, []);
 }
