@@ -1,7 +1,8 @@
-import { Exact, ExtendedMergeRequestsPageQueryGQL } from '../../../../generated/graphql/graphql-sdk';
+import { 
+    ProjectExtendedMergeRequestsQueryGQL,
+    ProjectExtendedMergeRequestsQueryVariablesGQL
+} from '../../../../generated/graphql/graphql-sdk';
 
 export interface IGitlabGraphqlClient {
-    getExtendedMergeRequestsPage(variables: Exact<{
-        mergeRequestsIids: string[];
-    }>): Promise<ExtendedMergeRequestsPageQueryGQL>    
+    getProjectExtendedMergeRequests(variables: ProjectExtendedMergeRequestsQueryVariablesGQL): Promise<ProjectExtendedMergeRequestsQueryGQL> 
 }

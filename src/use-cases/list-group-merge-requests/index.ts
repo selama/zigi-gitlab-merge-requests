@@ -1,19 +1,20 @@
-import { ExtendedMergeRequestsPageQueryGQL, MergeRequestGQL } from '../../../generated/graphql/graphql-sdk';
-import { fetchMergeRequestsPages } from './merge-requests-fetcher';
+import { addCommitsDataToMergeRequests } from './merge-requests-commits-fetcher';
+import { addDiscussionsDataToMergeRequests } from './merge-requests-discussions-fetcher';
+import { fetchAllMergeRequestsForAGroup } from './merge-requests-fetcher';
+import { addNotesDataToMergeRequests } from './merge-requests-notes-fetcher';
 
-const mergeRequestPagesToMergeRequets = 
-    (mergeRequestsArr: MergeRequestGQL[], mergeRequestsPage: MergeRequestGQL[]) => 
-        [...mergeRequestsArr, ...mergeRequestsPage];
-
-const extractMergeRequestsFromPages = (extendedMergeRequestsPagesResult: ExtendedMergeRequestsPageQueryGQL[]) => {
-    const extendedMergeRequestsPages = extendedMergeRequestsPagesResult.map(page => page?.group?.mergeRequests?.nodes);
-    return extendedMergeRequestsPages.reduce(mergeRequestPagesToMergeRequets, []);
-}
-
-const formatMergeRequestsData = (extendedMergeRequests: ReturnType<typeof extractMergeRequestsFromPages>) => extendedMergeRequests;
-
-export const listGroupMergeRequests = async (groupId: string, query: Record<string, string>) => {
-    const extendedMergeRequestsPages = await fetchMergeRequestsPages(groupId, query);
-    const extendedMergeRequests = extractMergeRequestsFromPages(extendedMergeRequestsPages);
-    return formatMergeRequestsData(extendedMergeRequests);
+export const listGroupMergeRequests = async (groupId: string, query: Record<string, string>): Promise<any> => {
+    console.log('1');
+    const allMergeRequests = await fetchAllMergeRequestsForAGroup(groupId, query);
+    console.log('2');
+    const allMergeRequestsWithNotesAdded = await addNotesDataToMergeRequests(allMergeRequests);
+    console.log('3');
+    const allMergeRequestsWithDiscussionsAdded = await addDiscussionsDataToMergeRequests(allMergeRequestsWithNotesAdded);
+    console.log('4');
+    const allMergeRequestsWithCommitsAdded = await addCommitsDataToMergeRequests(allMergeRequestsWithDiscussionsAdded);
+    console.log('5');
+    // const mergeRequestsIidsGroupedByProjects = groupMergeRequestsIidsByProjects(allMergeRequests);
+    // const projectsMergeRequests = await fetchAllProjectsMergeRequests(mergeRequestsIidsGroupedByProjects);
+    // return projectsMergeRequests;
+    return allMergeRequestsWithCommitsAdded;
 }

@@ -1,0 +1,57 @@
+query projectExtendedMergeRequests($projectId: ID!,$mergeRequestsIids: [String!]!) {
+  projects(ids: [$projectId]) {
+    nodes {
+      mergeRequests(iids: $mergeRequestsIids) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          iid
+          createdAt
+          updatedAt
+          project {
+            id
+            name
+          }
+          title
+          sourceBranch
+          targetBranch
+          discussions{
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              notes {
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+                nodes {
+                  body
+                  author {
+                    username
+                  }
+                }
+              }
+            }
+          },
+          notes {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              body
+              author {
+                username
+              }        
+            }
+          }
+        }      
+      }
+    }
+  }
+}

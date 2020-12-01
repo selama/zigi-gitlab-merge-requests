@@ -1,8 +1,6 @@
 import { GraphQLClient } from 'graphql-request'
-import { Exact, ExtendedMergeRequestsPageQueryGQL, getSdk } from '../../../generated/graphql/graphql-sdk';
+import { getSdk, ProjectExtendedMergeRequestsQueryGQL, ProjectExtendedMergeRequestsQueryVariablesGQL } from '../../../generated/graphql/graphql-sdk';
 import { IGitlabGraphqlClient } from '../../config/config-interfaces/graphql-client-interface';
-
-const promisedTimeout = (timeout: number) =>  new Promise(resolve => setTimeout(resolve, timeout));
 
 const createQueue = <T>() => {
     const queue: T[] = [];
@@ -60,27 +58,37 @@ const createConcurrencyLimitter = (maxConcurrentPendingPromises: number = 5) => 
     }
 }
 
-const splitIids = (iids: string[]) => {
-    const part1Ids = iids.slice(0, Math.ceil(iids.length/2));
-    const part2Ids = iids.slice(Math.ceil(iids.length/2));
-    return [part1Ids, part2Ids];
+const splitIids = (mergeRequestsIids: string[]) => {
+    const iids1 = mergeRequestsIids.slice(0, Math.ceil(mergeRequestsIids.length/2));
+    const iids2 = mergeRequestsIids.slice(Math.ceil(mergeRequestsIids.length/2));
+    return [iids1, iids2];
 }
 
-const mergeResults = (part1Result: ExtendedMergeRequestsPageQueryGQL, part2Result: ExtendedMergeRequestsPageQueryGQL) => {
+const mergeResults = (
+    result1: ProjectExtendedMergeRequestsQueryGQL,
+    result2: ProjectExtendedMergeRequestsQueryGQL
+    ): ProjectExtendedMergeRequestsQueryGQL => {
+    const mergeRequests1 = result1.projects.nodes[0].mergeRequests;
+    const mergeRequests2 = result2.projects.nodes[0].mergeRequests;
     return {
-        group: {
-            mergeRequests: {
-                nodes: [
-                    ...part1Result.group.mergeRequests.nodes,
-                    ...part2Result.group.mergeRequests.nodes
-                ]
-            }
+        projects: {
+            nodes: [
+                {
+                    mergeRequests: {
+                        pageInfo: {
+                            endCursor: `[${mergeRequests1.pageInfo.endCursor},${mergeRequests2.pageInfo.endCursor}]`,
+                            hasNextPage: mergeRequests1.pageInfo.hasNextPage || mergeRequests2.pageInfo.hasNextPage
+                        },
+                        nodes: [
+                            ...mergeRequests1.nodes,
+                            ...mergeRequests2.nodes,
+                        ]
+                    }
+                }
+            ]
         }
-    };
-};
-
-type RetryFunction = (variables: Exact<{ mergeRequestsIids: string[]; }>, attempt?: number) => 
-    Promise<ExtendedMergeRequestsPageQueryGQL>;
+    }
+}
 
 export class GitlabGraphqlClient implements IGitlabGraphqlClient {
 
@@ -92,35 +100,26 @@ export class GitlabGraphqlClient implements IGitlabGraphqlClient {
         this.sdk = getSdk(client);
     }
 
-    // since the gitlab API is very fragile - adding this resiliant retry mechanism.
-    // 1 - it uses a concurrency limiter mechanism - ensure that no more than 5 requests are being 
-    // in pending state(fetching) concurrently.
-    // 2 - the original request is trying to fetch a whole page data (100 merge requests), but if
-    // a request has failed, this retry mechanism, will try 2 requests of 50 merge requests.
-    // a fail for 50 merge requests fetching will lead to 25 merge requests fetcing and so on up to 10 iterations.
-    _retry: RetryFunction = async (variables: Exact<{ mergeRequestsIids: string[]; }>, attempt: number = 0) => {
-        const maxRetries = 10;
-        try {
-            const result = await this.concurrencyLimitter.add(
-                () => promisedTimeout(attempt * 100).then(() => this.sdk.extendedMergeRequestsPage(variables))
-            );
-            return result;
-        } catch (err) {
-            if (attempt < maxRetries) {
-                const [part1Iids, part2Iids] = splitIids(variables.mergeRequestsIids);
-                const [part1Result, part2Result]: ExtendedMergeRequestsPageQueryGQL[] = await Promise.all([
-                    this._retry({ mergeRequestsIids: part1Iids }, attempt + 1),
-                    this._retry({ mergeRequestsIids: part2Iids }, attempt + 1),
-                ]);
-                return mergeResults(part1Result, part2Result);
-            } else {
-                console.log('failed', variables.mergeRequestsIids);
+    _retry = (
+        {projectId, mergeRequestsIids}: ProjectExtendedMergeRequestsQueryVariablesGQL,
+        attempt: number = 0): Promise<ProjectExtendedMergeRequestsQueryGQL> => {
+        const maxRetries = 5;
+        return this.concurrencyLimitter
+            .add(() => this.sdk.projectExtendedMergeRequests({projectId, mergeRequestsIids}))
+            .catch(async (err) => {
+                if (attempt < maxRetries) {
+                    const [iids1, iids2] = splitIids(mergeRequestsIids);
+                    const [result1, result2] = await Promise.all([
+                        this._retry({projectId, mergeRequestsIids: iids1}, attempt + 1),
+                        this._retry({projectId, mergeRequestsIids: iids2}, attempt + 1),
+                    ]);
+                    return mergeResults(result1, result2);
+                }
                 throw err;
-            }
-        }
+            });
     }
 
-    getExtendedMergeRequestsPage = (variables: Exact<{ mergeRequestsIids: string[]; }>) => {
-        return this._retry(variables);
+    getProjectExtendedMergeRequests = ({projectId, mergeRequestsIids}: ProjectExtendedMergeRequestsQueryVariablesGQL) => {
+        return this._retry({projectId, mergeRequestsIids})
     }
 }

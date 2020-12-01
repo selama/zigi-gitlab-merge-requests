@@ -4,6 +4,7 @@ import { createRouter } from './express/router';
 import { errorHandler } from './express/middlewares/express-error-handler';
 import { RestClient } from './utils/axios-rest-client';
 import { GitlabGraphqlClient } from './utils/graphql-client/graphql-sdk-client';
+import { createConcurrencyLimitter } from './utils/concurrencyLimitter';
 
 const { 
   SERVICE_PORT, 
@@ -28,7 +29,10 @@ const gitlabGraphqlClient = new GitlabGraphqlClient(
   }
 )
 
-setConfig({ 
+const concurrencyLimitter = createConcurrencyLimitter(5);
+
+setConfig({
+  concurrencyLimitter, 
   gitlabRestClient,
   gitlabGraphqlClient,
   groupId: GITLAB_GROUP_ID
