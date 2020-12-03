@@ -1,3 +1,5 @@
+let counter = 0;
+
 const createQueue = <T>() => {
     const queue: T[] = [];
     return {
@@ -20,6 +22,7 @@ const bindActionInvokerToAPromise = <T>(action: () => Promise<T>): [() => Promis
 
     const invoker = () => action()
         .then(result => {
+            ((counter++)%100 === 0) && console.log('resolved', counter);
             resolvePromise(result);
         })
         .catch(reason => {
@@ -29,7 +32,7 @@ const bindActionInvokerToAPromise = <T>(action: () => Promise<T>): [() => Promis
     return [invoker, promise];
 }
 
-export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number = 5) => {
+export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) => {
     let currentPendingCount = 0;
     let invokersQueue = createQueue<() => Promise<unknown>>();
     let paused: boolean = false;
@@ -53,6 +56,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number =
     }
 
     const resume = () => {
+        console.log('resume');
         paused = false;
         for (let i=0; i<maxConcurrentPendingPromises; i++) {
             execute();
@@ -60,6 +64,10 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number =
     }
 
     const pause = (timeout: number) => {
+        if (paused) {
+            return;
+        }
+        console.log('pause');
         paused = true;
         setTimeout(resume, timeout);
     }
