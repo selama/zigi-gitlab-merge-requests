@@ -3,14 +3,13 @@ import { setConfig } from './config';
 import { createRouter } from './express/router';
 import { errorHandler } from './express/middlewares/express-error-handler';
 import { RestClient } from './utils/axios-rest-client';
-import { GitlabGraphqlClient } from './utils/graphql-client/graphql-sdk-client';
-import { createConcurrencyLimitter } from './utils/concurrencyLimitter';
+import { createConcurrencyLimitter } from './utils/concurrency-limitter';
+import { createRequestsManager } from './utils/requests-manager';
 
 const { 
   SERVICE_PORT, 
   GITLAB_API_KEY, 
   GITLAB_REST_URL, 
-  GITLAB_GRAPHQL_URL, 
   GITLAB_GROUP_ID 
 } = process.env;
 
@@ -22,19 +21,12 @@ const gitlabRestClient = new RestClient(
   }
 );
 
-const gitlabGraphqlClient = new GitlabGraphqlClient(
-  GITLAB_GRAPHQL_URL,
-  {
-    "PRIVATE-TOKEN": GITLAB_API_KEY,
-  }
-)
+const concurrencyLimitter = createConcurrencyLimitter(15);
 
-const concurrencyLimitter = createConcurrencyLimitter(5);
+const requestsManager = createRequestsManager(gitlabRestClient, concurrencyLimitter);
 
 setConfig({
-  concurrencyLimitter, 
-  gitlabRestClient,
-  gitlabGraphqlClient,
+  requestsManager,
   groupId: GITLAB_GROUP_ID
 });
 

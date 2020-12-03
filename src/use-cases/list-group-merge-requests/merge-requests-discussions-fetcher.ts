@@ -2,11 +2,8 @@ import { config } from '../../config';
 import { MergeRequestREST, DiscussionREST } from '../../config/config-interfaces/rest-client-interfaces';
 
 const fetchAllMergeRequestDiscussions = async ({ project_id, iid }: MergeRequestREST) => {
-    const firstPagePromise = config.concurrencyLimitter.add(
-        () => {
-            return config.gitlabRestClient.get<DiscussionREST[]>(`/projects/${project_id}/merge_requests/${iid}/discussions`);
-        }
-    );
+    const firstPagePromise = config.requestsManager.get<DiscussionREST[]>(`/projects/${project_id}/merge_requests/${iid}/discussions`);
+
     const firstPage = await firstPagePromise;
 
     return firstPage.getData();

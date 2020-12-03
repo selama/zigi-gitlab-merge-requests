@@ -27,7 +27,7 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
 }
 
 const fetchSinglePage = async (groupId: string, query: Record<string, string | number>) => {
-    return config.gitlabRestClient.get<MergeRequestREST[]>(`groups/${groupId}/merge_requests`, {...query});
+    return config.requestsManager.get<MergeRequestREST[]>(`groups/${groupId}/merge_requests`, {...query});
 }
 
 const fetchRestOfPages = (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {

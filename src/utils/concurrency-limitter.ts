@@ -32,9 +32,10 @@ const bindActionInvokerToAPromise = <T>(action: () => Promise<T>): [() => Promis
 export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number = 5) => {
     let currentPendingCount = 0;
     let invokersQueue = createQueue<() => Promise<unknown>>();
+    let paused: boolean = false;
 
     const execute = async () => {
-        if (currentPendingCount === maxConcurrentPendingPromises || invokersQueue.size() === 0) {
+        if (currentPendingCount === maxConcurrentPendingPromises || invokersQueue.size() === 0 || paused) {
             return;
         }
         const invoker = invokersQueue.pop();
@@ -44,12 +45,27 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number =
         execute();
     }
 
-    return {
-        add: <T>(action: () => Promise<T>) => {
-            const [invoker, promise] = bindActionInvokerToAPromise<T>(action);
-            invokersQueue.add(invoker);
+    const add = <T>(action: () => Promise<T>) => {
+        const [invoker, promise] = bindActionInvokerToAPromise<T>(action);
+        invokersQueue.add(invoker);
+        execute();
+        return promise;
+    }
+
+    const resume = () => {
+        paused = false;
+        for (let i=0; i<maxConcurrentPendingPromises; i++) {
             execute();
-            return promise;
         }
+    }
+
+    const pause = (timeout: number) => {
+        paused = true;
+        setTimeout(resume, timeout);
+    }
+
+    return {
+        add,
+        pause
     }
 }

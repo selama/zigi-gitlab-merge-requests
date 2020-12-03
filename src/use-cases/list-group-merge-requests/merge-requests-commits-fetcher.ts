@@ -2,11 +2,8 @@ import { config } from '../../config';
 import { MergeRequestREST, CommitsREST } from '../../config/config-interfaces/rest-client-interfaces';
 
 const fetchAllMergeRequestCommits = async ({ project_id, iid }: MergeRequestREST) => {
-    const firstPagePromise = config.concurrencyLimitter.add(
-        () => {
-            return config.gitlabRestClient.get<CommitsREST[]>(`/projects/${project_id}/merge_requests/${iid}/commits`);
-        }
-    );
+    const firstPagePromise = config.requestsManager.get<CommitsREST[]>(`/projects/${project_id}/merge_requests/${iid}/commits`);
+
     const firstPage = await firstPagePromise;
 
     return firstPage.getData();
