@@ -1,4 +1,4 @@
-import { IRequestsManager } from './config-interfaces/requests-manger-interface';
+import { IRequestsManager } from './config-interfaces';
 
 type Config = {
     requestsManager: IRequestsManager;

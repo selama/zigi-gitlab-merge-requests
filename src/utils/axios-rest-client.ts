@@ -1,6 +1,6 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { IRestClient, IRestClientResult } from '../config/config-interfaces/rest-client-interfaces';
+import { IRestClient, IRestClientResult } from '../config/config-interfaces';
 
 export class RestClient implements IRestClient {
 

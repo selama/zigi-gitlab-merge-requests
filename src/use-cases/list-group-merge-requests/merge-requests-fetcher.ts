@@ -1,11 +1,11 @@
 import { config } from '../../config';
-import { MergeRequestREST } from '../../config/config-interfaces/rest-client-interfaces';
+import { MergeRequestDTO } from '../../types/dto';
 
 const MAX_PER_PAGE = 100;
 const OPEN_MERGE_REQUEST_STATE = 'opened';
 const TOTAL_PAGES_COUNT_HEADER_KEY = 'x-total-pages';
 
-const mergeRequestsPagesToMergeRequests = (allMergeRequests: MergeRequestREST[], mergeRequestsPage: MergeRequestREST[]) => 
+const mergeRequestsPagesToMergeRequests = (allMergeRequests: MergeRequestDTO[], mergeRequestsPage: MergeRequestDTO[]) => 
     [...allMergeRequests, ...mergeRequestsPage]
 
 const range = (inclusiveStart: number, inclusiveEnd: number) => {
@@ -27,7 +27,7 @@ const getMergeRequestsQuery = (query: Record<string, string>) => {
 }
 
 const fetchSinglePage = async (groupId: string, query: Record<string, string | number>) => {
-    return config.requestsManager.get<MergeRequestREST[]>(`groups/${groupId}/merge_requests`, {...query});
+    return config.requestsManager.get<MergeRequestDTO[]>(`groups/${groupId}/merge_requests`, {...query});
 }
 
 const fetchRestOfPages = (groupId: string, query: Record<string, string | number>, totalPagesCount: number) => {

@@ -1,15 +1,15 @@
 import { config } from '../../config';
-import { MergeRequestREST, DiscussionREST } from '../../config/config-interfaces/rest-client-interfaces';
+import { MergeRequestDTO, DiscussionDTO } from '../../types/dto';
 
-const fetchAllMergeRequestDiscussions = async ({ project_id, iid }: MergeRequestREST) => {
-    const firstPagePromise = config.requestsManager.get<DiscussionREST[]>(`/projects/${project_id}/merge_requests/${iid}/discussions`);
+const fetchAllMergeRequestDiscussions = async ({ project_id, iid }: MergeRequestDTO) => {
+    const firstPagePromise = config.requestsManager.get<DiscussionDTO[]>(`/projects/${project_id}/merge_requests/${iid}/discussions`);
 
     const firstPage = await firstPagePromise;
 
     return firstPage.getData();
 }
 
-export const addDiscussionsDataToMergeRequests = (mergeRequests: MergeRequestREST[]) => {
+export const addDiscussionsDataToMergeRequests = (mergeRequests: MergeRequestDTO[]) => {
     return Promise.all(mergeRequests.map(async (mergeRequest) => {
         return {
             ...mergeRequest,

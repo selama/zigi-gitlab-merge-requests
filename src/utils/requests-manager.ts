@@ -1,5 +1,4 @@
-import { IRequestsManager, RequestsManagerGET } from '../config/config-interfaces/requests-manger-interface';
-import { IRestClient } from '../config/config-interfaces/rest-client-interfaces';
+import { IRequestsManager, RequestsManagerGET, IRestClient, IConcurrencyLimitter } from '../config/config-interfaces';
 
 const ONE_MIN = 60_000;
 const TOO_MANY_REQUESTS_CODE = 429;
