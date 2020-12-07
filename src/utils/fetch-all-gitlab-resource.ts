@@ -30,7 +30,6 @@ const fetchGitlabResourcePages = async <T>(
     const firstPage = await firstPagePromise;
 
     const totalPagesCount = Number(firstPage.getHeaders()[TOTAL_PAGES_COUNT_HEADER_KEY]);
-    totalPagesCount > 1 && console.log('totalPagesCount', totalPagesCount);
     const restOfPagesPromises = fetchRestOfPages<T>(resource, maxPerPageQuery, totalPagesCount);
 
     const resourcePages = await Promise.all([firstPagePromise, ...restOfPagesPromises]);

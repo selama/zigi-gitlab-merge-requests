@@ -1,5 +1,3 @@
-let counter = 0;
-
 const createQueue = <T>() => {
     const queue: T[] = [];
     return {
@@ -22,7 +20,6 @@ const bindActionInvokerToAPromise = <T>(action: () => Promise<T>): [() => Promis
 
     const invoker = () => action()
         .then(result => {
-            ((++counter)%100 === 0) && console.log('resolved', counter);
             resolvePromise(result);
         })
         .catch(reason => {
@@ -45,7 +42,6 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) 
         currentPendingCount++;
         await invoker()
         currentPendingCount--;
-        !currentPendingCount && console.log('resolved', counter);
         execute();
     }
 
