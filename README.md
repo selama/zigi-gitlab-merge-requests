@@ -55,6 +55,7 @@ SERVICE_PORT - internal service port - used by express server.
 - The project is based on this [template](https://github.com/jsynowiec/node-typescript-boilerplate).
 - I've decided to use TypeScript - I like type safty as it makes the code clearer and less buggy IMO,
 <br/>and enables reliable auto-complete features in my code editor.
+<br/>and it also has very nice codegen to be used for graphql.
 - Searching for best practices, I've been inspired by:
     1. This [video](https://www.youtube.com/watch?v=CnailTcJV_U&ab_channel=DevMastery)
     2. This [document](https://github.com/goldbergyoni/nodebestpractices)
