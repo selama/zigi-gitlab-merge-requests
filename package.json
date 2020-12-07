@@ -25,12 +25,12 @@
   },
   "scripts": {
     "start": "rimraf build && npm run build && export $(cat .env | xargs) && node build/src/main.js",
-    "clean": "rimraf coverage build tmp",
+    "clean": "rimraf generated coverage build tmp",
     "build": "npm run generate-gql && tsc -p tsconfig.release.json",
     "lint": "eslint . --ext .ts,.tsx",
     "test": "jest --coverage && rimraf coverage",
     "test:watch": "jest --watch",
-    "generate-gql": "rimraf src/generated/graphql && graphql-codegen --config codegen.yml"
+    "generate-gql": "graphql-codegen --config codegen.yml"
   },
   "author": "Sela Marjan <sela.marjan@gmail.com>",
   "license": "Apache-2.0",

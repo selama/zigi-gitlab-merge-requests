@@ -6,7 +6,7 @@ RUN npm install
 COPY . .
 
 RUN npm run build
-WORKDIR ./build
+WORKDIR /use/app/build
 
 EXPOSE ${SERVICE_PORT}
 CMD node src/main.js
