@@ -13,10 +13,10 @@ const calcReviewDecision = (discussions: DiscussionDTO[], approvalState: Approva
         return discussion.notes.some(({resolvable}) => resolvable);
     });
     const changesWereRequested = resolvableDiscussions.length;
-    if (!changesWereRequested) {
+    const isApproved = approvalState.rules.every(({approved}) => approved);
+    if (!isApproved && !changesWereRequested) {
         return null;
     }
-    const isApproved = approvalState.rules.every(({approved}) => approved);
     return isApproved ? 'approved' : 'change_requests';
 }
 
