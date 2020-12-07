@@ -23,7 +23,7 @@ const fetchRestOfPages = <T>(resource: string, query: Record<string, string | nu
 
 const fetchGitlabResourcePages = async <T>(
     resource: string, 
-    query: Record<string, string | number> | undefined
+    query: Record<string, string | number> = {}
 ) => {
     const maxPerPageQuery = {per_page: MAX_PER_PAGE, ...query}
     const firstPagePromise = config.requestsManager.get<T[]>(resource, maxPerPageQuery);
@@ -39,7 +39,7 @@ const fetchGitlabResourcePages = async <T>(
 
 export const fetchGitlabResources = async <T>(
     resource: string, 
-    query: Record<string, string | number> | undefined
+    query?: Record<string, string | number>
 ) => {
     const resourcePages = await fetchGitlabResourcePages<T>(resource, query);
     const resources = extractResourcesFromPages(resourcePages);

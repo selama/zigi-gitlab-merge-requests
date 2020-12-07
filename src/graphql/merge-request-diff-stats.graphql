@@ -1,0 +1,12 @@
+query mergeResquestDiffStats($projectId: ID!, $mergeRequestsId: String!) {
+  project(fullPath: $projectId) {
+		mergeRequests(iids: [$mergeRequestsId]) {
+      nodes {
+        diffStatsSummary {
+          additions,
+          deletions
+        }
+      }
+    }    
+  }
+}

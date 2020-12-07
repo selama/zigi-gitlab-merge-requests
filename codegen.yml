@@ -1,0 +1,16 @@
+overwrite: true
+schema: "https://docs.gitlab.com/ee/api/graphql/reference/gitlab_schema.json"
+documents: "src/**/*.graphql"
+generates:
+  generated/graphql/graphql-sdk.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-graphql-request"
+    config:
+      enumsAsTypes: true
+      futureProofEnums: true
+      typesSuffix: "GQL"
+  generated/graphql/graphql.schema.json:
+    plugins:
+      - "introspection"

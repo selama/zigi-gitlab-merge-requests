@@ -1,13 +1,19 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { IRestClient, IRestClientResult } from '../config/config-interfaces';
+import { setupCache } from 'axios-cache-adapter';
 
 export class RestClient implements IRestClient {
 
     private clientInstance: AxiosInstance;
 
     constructor(baseURL: string, headers: Record<string, string>) {
+        const cache = setupCache({
+            maxAge: 30 * 60 * 1000
+        });
+ 
         this.clientInstance = axios.create({
+                adapter: cache.adapter,
                 baseURL,
                 headers
             });

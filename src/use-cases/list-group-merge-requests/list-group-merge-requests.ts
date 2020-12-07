@@ -1,12 +1,11 @@
-import { addCommitsDataToMergeRequests } from './merge-requests-commits-fetcher';
-import { addDiscussionsDataToMergeRequests } from './merge-requests-discussions-fetcher';
-import { fetchAllMergeRequestsForAGroup } from './merge-requests-fetcher';
-import { addNotesDataToMergeRequests } from './merge-requests-notes-fetcher';
+import { formatExtendedMergeRequests } from './format-extended-merge-requests';
+import { fetchAllMergeRequestsForAGroup } from './merge-requests-basic-fetcher';
+import { fetchExtendedMergeRequests } from './merge-requests-extended-fetcher';
 
 export const listGroupMergeRequests = async (groupId: string, query: Record<string, string>): Promise<any> => {
-    const allMergeRequests = await fetchAllMergeRequestsForAGroup(groupId, query);
-    const allMergeRequestsWithNotesAdded = await addNotesDataToMergeRequests(allMergeRequests);
-    const allMergeRequestsWithDiscussionsAdded = await addDiscussionsDataToMergeRequests(allMergeRequestsWithNotesAdded);
-    const allMergeRequestsWithCommitsAdded = await addCommitsDataToMergeRequests(allMergeRequestsWithDiscussionsAdded);
-    return allMergeRequestsWithCommitsAdded;
+    const mergeRequests = await fetchAllMergeRequestsForAGroup(groupId, query);
+    const extendedMergeRequests = await fetchExtendedMergeRequests(mergeRequests);
+    const result = formatExtendedMergeRequests(extendedMergeRequests);
+    console.log('finish')
+    return result;
 }
