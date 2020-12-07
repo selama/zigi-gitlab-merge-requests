@@ -1,12 +1,79 @@
 import { MergeResquestDiffStatsQueryGQL } from '../../../generated/graphql/graphql-sdk';
 import { 
     ApprovalStateDTO, 
-    // CommitDTO, 
+    CommitDTO, 
     DiscussionDTO, 
     MergeRequestDTO, 
-    // NoteDTO, 
-    ProjectDTO 
+    NoteDTO, 
+    ProjectDTO,
+    Event, 
+    ResourceStateEventDTO
 } from '../../types/dto';
+
+const getStateEvents = (resourceStateEvents: ResourceStateEventDTO[]): Event[] => {
+    const sortedByCreationDateStateEvents = resourceStateEvents
+        .slice()
+        .sort((ev1, ev2) => ev1.created_at.localeCompare(ev2.created_at));
+
+    const stateEvents = sortedByCreationDateStateEvents
+        .map(({
+            created_at,
+            state,
+            user: {
+                username
+            }
+        }, i) => ({
+            kind: 'state',
+            when: created_at,
+            action: 'change',
+            data: {
+                author: username,
+                to: state,
+                from: i ? sortedByCreationDateStateEvents[i-1].state : 'open'
+            }
+        }));
+    return stateEvents; 
+}
+
+const getCommitEvents = (commits: CommitDTO[]): Event[] => {
+    const commitEvents = commits.map(({
+        author_email,
+        created_at,
+        message
+    }) => ({
+        kind: 'commit',
+        when: created_at,
+        action: 'add',
+        data: {
+            author: author_email,
+            message
+        }
+    }));
+    return commitEvents;
+}
+
+const getReviewEvents = (discussions: DiscussionDTO[]): Event[] => {
+    const notes: NoteDTO[] = discussions.reduce((allNotes, {notes}) => [...allNotes, ...notes], []);
+    const discussionNotes = notes.filter(({type}) => type === 'DiscussionNote');
+    const reviewEvents = discussionNotes.map(({
+        created_at,
+        author: {
+            username
+        },
+        body
+    }) => ({
+        kind: 'review',
+        when: created_at,
+        action: 'add',
+        data: {
+            author: username,
+            body,
+            state: "COMMENTED",
+            comments_count: 1 // Gitlab does not have a review entity - the reviewer only adds discussions(one by one) on the Merge Requset.
+        }
+    }));
+    return reviewEvents;
+}
 
 const calcReviewDecision = (discussions: DiscussionDTO[], approvalState: ApprovalStateDTO) => {
     const resolvableDiscussions = discussions.filter((discussion) => {
@@ -22,18 +89,18 @@ const calcReviewDecision = (discussions: DiscussionDTO[], approvalState: Approva
 
 const formatSingleMergeRequest = ({
     mergeRequest,
-    // commits,
-    // notes,
+    commits,
     discussions,
     approvalState,
+    stateEvents,
     projectData,
     diffStats
 }: {
     mergeRequest: MergeRequestDTO;
-    // commits: CommitDTO[];
-    // notes: NoteDTO[];
+    commits: CommitDTO[];
     discussions: DiscussionDTO[];
     approvalState: ApprovalStateDTO;
+    stateEvents: ResourceStateEventDTO[];
     projectData: ProjectDTO;
     diffStats: MergeResquestDiffStatsQueryGQL;
 }) => {
@@ -69,17 +136,21 @@ const formatSingleMergeRequest = ({
         deletions: diffStats?.project?.mergeRequests?.nodes[0]?.diffStatsSummary?.deletions,
         labels,
         url: projectData.http_url_to_repo,
-        // events: []
+        events: [
+            ...getReviewEvents(discussions),
+            ...getCommitEvents(commits),
+            ...getStateEvents(stateEvents)
+        ]
     }
 }
 
 
 export const  formatExtendedMergeRequests = (extendedMergeRequests: {
     mergeRequest: MergeRequestDTO;
-    // commits: CommitDTO[];
-    // notes: NoteDTO[];
+    commits: CommitDTO[];
     discussions: DiscussionDTO[];
     approvalState: ApprovalStateDTO;
+    stateEvents: ResourceStateEventDTO[];
     projectData: ProjectDTO;
     diffStats: MergeResquestDiffStatsQueryGQL; 
 }[]) => {
