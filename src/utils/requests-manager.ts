@@ -19,30 +19,26 @@ export const createRequestsManager = (
     graphqlClient: IGraphqlClient,
     concurrencyLimitter: IConcurrencyLimitter): IRequestsManager  => {
 
-    const get: RequestsManagerGET = async <T>(resource: string, query: Record<string, string | number> | undefined) => {
+
+    const requestExecuter: <T>(request: () => Promise<T>) => Promise<T> = async (request) => {
         try {
-            return await concurrencyLimitter.add(() => restClient.get<T>(resource, query));
+            return await concurrencyLimitter.add(request);
         } catch (error) {
             if (isRecoverable(error)) {
                 concurrencyLimitter.pause(ONE_MIN);
-                return get<T>(resource, query);
+                return requestExecuter(request);
             } else {
                 throw error;
             }
         }
     }
+
+    const get: RequestsManagerGET = <T>(resource: string, query: Record<string, string | number> | undefined) => {
+        return requestExecuter(() => restClient.get<T>(resource, query));
+    }
         
     const getMergeResquestDiffStats: RequestManagerGetMRStats = async (projectId: string, mergeRequestId: string) => {
-        try {
-            return await concurrencyLimitter.add(() => graphqlClient.getMergeResquestDiffStats(projectId, mergeRequestId));
-        } catch (error) {
-            if (isRecoverable(error)) {
-                concurrencyLimitter.pause(ONE_MIN);
-                return getMergeResquestDiffStats(projectId, mergeRequestId);
-            } else {
-                throw error;
-            }
-        }
+        return requestExecuter(() => graphqlClient.getMergeResquestDiffStats(projectId, mergeRequestId));
     }
 
     return {
