@@ -4,6 +4,7 @@
 - Expose REST API for fetching Gitlab Merge Requests(1) for a specified Group(2).
 - Providing "since" within the request, will retrieve all Merge Requests which has been updated since.
 - If "since" was not provided, will retrieve all Merge Requests in "opened" state.
+- Pagination on Gitlab's API is done automatically.
 - The returned data will be formatted acoording to given requirement.
 - Theres no "Review" that match the Github Review. instead, an approver might add discussionNotes for a Merge Requets.
 - Also, review_requests: not available through API yet - comming soon: (https://gitlab.com/gitlab-org/gitlab/-/issues/290998)
