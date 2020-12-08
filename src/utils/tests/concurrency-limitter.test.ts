@@ -1,5 +1,5 @@
 import { createConcurrencyLimitter } from "../concurrency-limitter";
-import { createConcurrencyTracker, repeat } from './concurrency-limitter.test.helpers';
+import { createConcurrencyTracker, fakeLogger, repeat } from './concurrency-limitter.test.helpers';
 
 describe('concurrency-limitter', () => {
 
@@ -8,7 +8,7 @@ describe('concurrency-limitter', () => {
         const maxConcurrent = 3;
         const executionCount = 10;
 
-        const concurrencyLimitter = createConcurrencyLimitter(maxConcurrent);
+        const concurrencyLimitter = createConcurrencyLimitter(maxConcurrent, fakeLogger);
         const { concurrencyTracker, trackedAsyncAction } = createConcurrencyTracker();
 
         //when
@@ -26,7 +26,7 @@ describe('concurrency-limitter', () => {
         const maxConcurrent = 3;
         const executionCount = 10;
 
-        const concurrencyLimitter = createConcurrencyLimitter(maxConcurrent);
+        const concurrencyLimitter = createConcurrencyLimitter(maxConcurrent, fakeLogger);
         const { concurrencyTracker, trackedAsyncAction } = createConcurrencyTracker();
 
         //when

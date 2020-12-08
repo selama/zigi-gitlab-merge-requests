@@ -1,3 +1,5 @@
+import { ILogger } from '../../config/config-interfaces';
+
 export const createConcurrencyTracker = () => {
     let counter: number = 0;
     let max: number = 0;
@@ -37,3 +39,7 @@ export const createConcurrencyTracker = () => {
 }
 
 export const repeat = (count: number, action: () => any) => new Array(count).fill({}).map(action);
+
+export const fakeLogger: ILogger = {
+    info: () => {}
+}
