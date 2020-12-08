@@ -1,3 +1,5 @@
+import { config } from '../config'; 
+
 const createQueue = <T>() => {
     const queue: T[] = [];
     return {
@@ -53,7 +55,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) 
     }
 
     const resume = () => {
-        console.log('resume');
+        config.logger.info('Resuming Concurrency Limitter');
         paused = false;
         for (let i=0; i<maxConcurrentPendingPromises; i++) {
             execute();
@@ -64,7 +66,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) 
         if (paused) {
             return;
         }
-        console.log('pause');
+        config.logger.info(`Pausing Concurrency Limitter for ${timeout} ms.`);
         paused = true;
         setTimeout(resume, timeout);
     }

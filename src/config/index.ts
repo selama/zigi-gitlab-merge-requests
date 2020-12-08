@@ -1,15 +1,17 @@
-import { IRequestsManager } from './config-interfaces';
+import { ILogger, IRequestsManager } from './config-interfaces';
 
-type Config = {
+export type Config = {
     requestsManager: IRequestsManager;
     groupId: string;
+    logger: ILogger;
 }
 
 const _config: Partial<Config> = {};
 
-export const setConfig = ({ requestsManager, groupId }: Config) => {
+export const setConfig = ({ requestsManager, groupId, logger }: Config) => {
     _config.requestsManager = requestsManager;
     _config.groupId = groupId;
+    _config.logger = logger;
 }
 
 export const config = {
@@ -19,4 +21,7 @@ export const config = {
     get groupId() {
         return _config.groupId;
     },
+    get logger() {
+        return _config.logger;
+    }
 }

@@ -26,3 +26,12 @@ export interface IRestClient {
 export interface IGraphqlClient {
     getMergeResquestDiffStats: RequestManagerGetMRStats;
 }
+
+interface LogFn {
+    /* tslint:disable:no-unnecessary-generics */
+    <T extends object>(obj: T, msg?: string, ...args: any[]): void;
+    (msg: string, ...args: any[]): void;
+}
+export interface ILogger {
+    info: LogFn;
+}

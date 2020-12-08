@@ -6,6 +6,5 @@ export const listGroupMergeRequests = async (groupId: string, query: Record<stri
     const mergeRequests = await fetchAllMergeRequestsForAGroup(groupId, query);
     const extendedMergeRequests = await fetchExtendedMergeRequests(mergeRequests);
     const result = formatExtendedMergeRequests(extendedMergeRequests);
-    console.log('finish')
     return result;
 }

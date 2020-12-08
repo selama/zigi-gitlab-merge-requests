@@ -1,5 +1,5 @@
 import express from "express";
-import { setConfig } from './config';
+import { Config, setConfig } from './config';
 import { createRouter } from './express/router';
 import { errorHandler } from './express/middlewares/express-error-handler';
 import { RestClient } from './utils/axios-rest-client';
@@ -7,6 +7,10 @@ import { createConcurrencyLimitter } from './utils/concurrency-limitter';
 import { createRequestsManager } from './utils/requests-manager';
 import { createGraphqlClient } from './utils/graphql-client';
 import { IGraphqlClient } from './config/config-interfaces';
+import pino from 'pino';
+import httpPino from 'pino-http';
+import createRequestIdEnricher from 'express-request-id';
+
 
 const { 
   SERVICE_PORT, 
@@ -15,6 +19,12 @@ const {
   GITLAB_GROUP_ID,
   GITLAB_GRAPHQL_URL 
 } = process.env;
+
+const logger = pino();
+const httpLogger = httpPino({
+  genReqId: (req) => req.id,
+  logger
+});
 
 const gitlabRestClient = new RestClient(
   GITLAB_REST_URL,
@@ -34,18 +44,25 @@ const concurrencyLimitter = createConcurrencyLimitter(15);
 
 const requestsManager = createRequestsManager(gitlabRestClient, gitlabGraphqlClient, concurrencyLimitter);
 
-setConfig({
+const config: Config = {
   requestsManager,
-  groupId: GITLAB_GROUP_ID
-});
+  groupId: GITLAB_GROUP_ID,
+  logger
+};
+
+setConfig(config);
 
 const app = express();
 const port = SERVICE_PORT;
+
+app.use(createRequestIdEnricher());
+
+app.use(httpLogger);
 
 app.use(createRouter());
 
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`server is listening...`);
+  config.logger.info(`server is listening...`);
 });
