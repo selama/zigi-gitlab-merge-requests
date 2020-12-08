@@ -1,4 +1,4 @@
-import { config } from '../config'; 
+import { ILogger } from '../config/config-interfaces';
 
 const createQueue = <T>() => {
     const queue: T[] = [];
@@ -31,7 +31,7 @@ const bindActionInvokerToAPromise = <T>(action: () => Promise<T>): [() => Promis
     return [invoker, promise];
 }
 
-export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) => {
+export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number, logger: ILogger) => {
     let currentPendingCount = 0;
     let invokersQueue = createQueue<() => Promise<unknown>>();
     let paused: boolean = false;
@@ -55,7 +55,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) 
     }
 
     const resume = () => {
-        config.logger.info('Resuming Concurrency Limitter');
+        logger.info('Resuming Concurrency Limitter');
         paused = false;
         for (let i=0; i<maxConcurrentPendingPromises; i++) {
             execute();
@@ -66,7 +66,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number) 
         if (paused) {
             return;
         }
-        config.logger.info(`Pausing Concurrency Limitter for ${timeout} ms.`);
+        logger.info(`Pausing Concurrency Limitter for ${timeout} ms.`);
         paused = true;
         setTimeout(resume, timeout);
     }

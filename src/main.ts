@@ -40,7 +40,7 @@ const gitlabGraphqlClient: IGraphqlClient = createGraphqlClient(
     "PRIVATE-TOKEN": GITLAB_API_KEY,
   });
 
-const concurrencyLimitter = createConcurrencyLimitter(15);
+const concurrencyLimitter = createConcurrencyLimitter(15, logger);
 
 const requestsManager = createRequestsManager(gitlabRestClient, gitlabGraphqlClient, concurrencyLimitter);
 
