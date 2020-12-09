@@ -1,5 +1,5 @@
 import { createConcurrencyLimitter } from "../concurrency-limitter";
-import { fakeLogger, createAsyncResource } from './concurrency-limitter.test.helpers';
+import { fakeLogger, createAsyncResource } from './test.helpers';
 
 describe('concurrency-limitter', () => {
 
