@@ -5,13 +5,29 @@ export const createAsyncResource = () => {
     let max = 0;
     const executionTimestamps: number[] = [];
 
-    const request = async (value?: any) => {
+    const requestStarted = () => {
         count++;
         max = Math.max(count, max);
         executionTimestamps.push(Date.now());
-        return new Promise(resolve => setTimeout(() => {
-            count--;
-            resolve(value);
+    }
+
+    const requestFinished = () => {
+        count--;
+    }
+
+    const resolve = async (value?: any) => {
+        requestStarted();
+        return new Promise(_resolve => setTimeout(() => {
+            requestFinished();
+            _resolve(value);
+        }))
+    }
+
+    const reject = async (value?: any) => {
+        requestStarted();
+        return new Promise((_resolve, _reject) => setTimeout(() => {
+            requestFinished();
+            _reject(value);
         }))
     }
 
@@ -20,7 +36,8 @@ export const createAsyncResource = () => {
     const getExecutionTimestamps = () => executionTimestamps;
 
     return {
-        request,
+        resolve,
+        reject,
         getMaxConcurrentExecuted,
         getExecutionTimestamps
     }
