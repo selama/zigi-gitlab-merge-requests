@@ -3,7 +3,7 @@ import { fakeLogger, createAsyncResource } from './concurrency-limitter.test.hel
 
 describe('concurrency-limitter', () => {
 
-    it('should allow up to max concurrent asyncActions', async () => {
+    it('should allow up to max concurrent async actions', async () => {
         //given
         const maxConcurrent = 3;
         const executionCount = 10;
@@ -90,7 +90,7 @@ describe('concurrency-limitter', () => {
         expect(diff).toBeLessThan(timeout2);
     });
 
-    it('should resolve the promise for "add" action with added action resolved value', async () => {
+    it('should resolve the promise returned from "add" action with added action resolved value', async () => {
         //given
         const values = ['eden', 'zohar', 'lili', 'cayo', 'hadar', 'sela'];
         const maxConcurrent = 3;
@@ -108,7 +108,7 @@ describe('concurrency-limitter', () => {
         expect(resolvedValues).toEqual(values);
     });
 
-    it('should reject the promise for "add" action with added action rejected value', async () => {
+    it('should reject the promise returned from "add" action with added action rejected value', async () => {
         //given
         const values = ['eden', 'zohar', 'lili', 'cayo', 'hadar', 'sela'];
         const maxConcurrent = 3;
@@ -137,8 +137,7 @@ describe('concurrency-limitter', () => {
             'cayo',
             'rejected hadar',
             'sela'
-        ]
-        );
+        ]);
     });
 
 });
