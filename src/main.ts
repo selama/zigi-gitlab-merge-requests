@@ -10,6 +10,7 @@ import { IGraphqlClient } from './config/config-interfaces';
 import pino from 'pino';
 import httpPino from 'pino-http';
 import createRequestIdEnricher from 'express-request-id';
+import { requestStartedLogger } from './express/middlewares/express-request-start-logger';
 
 
 const { 
@@ -58,6 +59,8 @@ const port = SERVICE_PORT;
 app.use(createRequestIdEnricher());
 
 app.use(httpLogger);
+
+app.use(requestStartedLogger);
 
 app.use(createRouter());
 

@@ -55,7 +55,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number, 
     }
 
     const resume = () => {
-        logger.info('Resuming Concurrency Limitter');
+        logger.info('resuming concurrency limitter');
         paused = false;
         for (let i=0; i<maxConcurrentPendingPromises; i++) {
             execute();
@@ -66,7 +66,7 @@ export const createConcurrencyLimitter = (maxConcurrentPendingPromises: number, 
         if (paused) {
             return;
         }
-        logger.info(`Pausing Concurrency Limitter for ${timeout} ms.`);
+        logger.info(`pausing concurrency limitter for ${timeout} ms.`);
         paused = true;
         setTimeout(resume, timeout);
     }
