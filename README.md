@@ -48,7 +48,7 @@ SERVICE_PORT - internal service port - used by express server.
 
 ### Resiliancy
 - I've used the biggest group I found (in terms of number of opened Merge Requests and activity), when I've developed and tried my service.
-<br/>It is the gitlab.org group - which has ~2500 opened Merge Requests
+<br/>It is the gitlab.org group - which has ~2500 opened Merge Requests (BTW - requesting for gitlab.org's (GroupId: 9970) opened Merge Requests - takes about 20 min)
 - For such a large group, a lot of requests are required, and their API sometimes can't handle this numbers.
 - therefore I've created a a mechnism to limit my concurrent requests, and in order to be able to recover from "Too Many Requests" error, while pausing requests, and then retry.
 
