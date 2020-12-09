@@ -1,44 +1,30 @@
 import { ILogger } from '../../config/config-interfaces';
 
-export const createConcurrencyTracker = () => {
-    let counter: number = 0;
-    let max: number = 0;
-    let executionTimestamps: number[] = [];
+export const createAsyncResource = () => {
+    let count = 0;
+    let max = 0;
+    const executionTimestamps: number[] = [];
 
-    const add = () => {
+    const request = async (value?: any) => {
+        count++;
+        max = Math.max(count, max);
         executionTimestamps.push(Date.now());
-        counter++;
-        max = Math.max(max, counter);
+        return new Promise(resolve => setTimeout(() => {
+            count--;
+            resolve(value);
+        }))
     }
 
-    const remove = () => {
-        counter--;
-    }
-
-    const getMax = () => max;
+    const getMaxConcurrentExecuted = () => max;
 
     const getExecutionTimestamps = () => executionTimestamps;
 
-    const trackedAsyncAction = () => {
-        return new Promise(resolve => {
-            add();
-            setTimeout(() => {
-                remove();
-                resolve();
-            });
-        })
-    }
-
     return {
-        concurrencyTracker: {
-            getMax,
-            getExecutionTimestamps
-        },
-        trackedAsyncAction
+        request,
+        getMaxConcurrentExecuted,
+        getExecutionTimestamps
     }
 }
-
-export const repeat = (count: number, action: () => any) => new Array(count).fill({}).map(action);
 
 export const fakeLogger: ILogger = {
     info: () => {}
